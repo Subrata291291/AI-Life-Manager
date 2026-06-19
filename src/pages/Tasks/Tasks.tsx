@@ -207,61 +207,61 @@ const Tasks = () => {
 
         <div className="row mb-4">
 
-  <div className="col-md-3">
-    <div className="card">
-      <div className="card-body text-center">
-        <h6>Total Tasks</h6>
-        <h3>{tasks.length}</h3>
-      </div>
-    </div>
-  </div>
+          <div className="col-6 col-md-3">
+            <div className="card">
+              <div className="card-body text-center">
+                <h6>Total Tasks</h6>
+                <h3>{tasks.length}</h3>
+              </div>
+            </div>
+          </div>
 
-  <div className="col-md-3">
-    <div className="card">
-      <div className="card-body text-center">
-        <h6>Completed</h6>
-        <h3>
-          {
-            tasks.filter(
-              t => t.status === "completed"
-            ).length
-          }
-        </h3>
-      </div>
-    </div>
-  </div>
+          <div className="col-6 col-md-3">
+            <div className="card">
+              <div className="card-body text-center">
+                <h6>Completed</h6>
+                <h3>
+                  {
+                    tasks.filter(
+                      t => t.status === "completed"
+                    ).length
+                  }
+                </h3>
+              </div>
+            </div>
+          </div>
 
-  <div className="col-md-3">
-    <div className="card">
-      <div className="card-body text-center">
-        <h6>Pending</h6>
-        <h3>
-          {
-            tasks.filter(
-              t => t.status === "pending"
-            ).length
-          }
-        </h3>
-      </div>
-    </div>
-  </div>
+          <div className="col-6 col-md-3">
+            <div className="card">
+              <div className="card-body text-center">
+                <h6>Pending</h6>
+                <h3>
+                  {
+                    tasks.filter(
+                      t => t.status === "pending"
+                    ).length
+                  }
+                </h3>
+              </div>
+            </div>
+          </div>
 
-  <div className="col-md-3">
-    <div className="card">
-      <div className="card-body text-center">
-        <h6>In Progress</h6>
-        <h3>
-          {
-            tasks.filter(
-              t => getTaskStatus(t) === "In Progress"
-            ).length
-          }
-        </h3>
-      </div>
-    </div>
-  </div>
+          <div className="col-6 col-md-3">
+            <div className="card">
+              <div className="card-body text-center">
+                <h6>In Progress</h6>
+                <h3>
+                  {
+                    tasks.filter(
+                      t => getTaskStatus(t) === "In Progress"
+                    ).length
+                  }
+                </h3>
+              </div>
+            </div>
+          </div>
 
-</div>
+        </div>
 
         {/* Create Task Form */}
 

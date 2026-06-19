@@ -61,7 +61,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       <div className="row g-0">
 
         <div
-          className="col-md-2 app-sidebar"
+          className="col-md-4 col-lg-2 app-sidebar"
         >
           <div className="app-brand">
             <span className="app-brand__mark">
@@ -136,7 +136,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
           </div>
         </div>
 
-        <main className="col-md-10 app-main">
+        <main className="col-md-8 col-lg-10 app-main">
 
           <div className="app-topbar">
 

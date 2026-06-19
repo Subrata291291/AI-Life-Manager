@@ -256,7 +256,7 @@ const monthlyExpense =
 
       <div className="row mb-4">
 
-        <div className="col-md-3">
+        <div className="col-6 col-md-3">
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h6>Total Expenses</h6>
@@ -265,7 +265,7 @@ const monthlyExpense =
           </div>
         </div>
 
-        <div className="col-md-3">
+        <div className="col-6 col-md-3">
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h6>Today's Expense</h6>
@@ -274,7 +274,7 @@ const monthlyExpense =
           </div>
         </div>
 
-        <div className="col-md-3">
+        <div className="col-6 col-md-3">
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h6>This Month</h6>
@@ -283,7 +283,7 @@ const monthlyExpense =
           </div>
         </div>
 
-        <div className="col-md-3">
+        <div className="col-6 col-md-3">
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h6>Total Entries</h6>

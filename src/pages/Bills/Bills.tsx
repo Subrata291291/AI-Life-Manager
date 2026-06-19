@@ -216,7 +216,7 @@ const Bills = () => {
 
       <div className="row mb-4">
 
-        <div className="col-md-3">
+        <div className="col-6 col-md-3">
           <div className="card">
             <div className="card-body text-center">
 
@@ -230,7 +230,7 @@ const Bills = () => {
           </div>
         </div>
 
-        <div className="col-md-3">
+        <div className="col-6 col-md-3">
           <div className="card">
             <div className="card-body text-center">
 
@@ -258,7 +258,7 @@ const Bills = () => {
           </div>
         </div>
 
-        <div className="col-md-3">
+        <div className="col-6 col-md-3">
           <div className="card">
             <div className="card-body text-center">
 
@@ -277,7 +277,7 @@ const Bills = () => {
           </div>
         </div>
 
-        <div className="col-md-3">
+        <div className="col-6 col-md-3">
           <div className="card">
             <div className="card-body text-center">
 

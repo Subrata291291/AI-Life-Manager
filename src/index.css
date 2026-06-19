@@ -60,6 +60,13 @@ html {
   background: var(--bg);
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+}
+
 body {
   min-height: 100vh;
   margin: 0;
@@ -343,6 +350,10 @@ label,
   text-transform: uppercase;
 }
 
+.app-topbar > .d-flex {
+  min-width: 0;
+}
+
 .auth-page {
   position: relative;
   display: grid;
@@ -606,6 +617,14 @@ label,
   color: var(--text);
   box-shadow: var(--shadow-soft) !important;
 }
+
+.row {
+  --bs-gutter-y: 1rem;
+}
+
+/* .row > [class*="col-"] .card {
+  height: 100%;
+} */
 
 .card-header {
   background: var(--surface-strong) !important;
@@ -1191,6 +1210,17 @@ label,
   vertical-align: middle;
 }
 
+.table th,
+.table td {
+  white-space: nowrap;
+}
+
+.table td:nth-child(3),
+.table td:nth-child(4) {
+  white-space: normal;
+  min-width: 180px;
+}
+
 .card:has(.table) {
   overflow-x: auto;
 }
@@ -1255,42 +1285,197 @@ label,
 }
 
 @media (max-width: 767.98px) {
+  body {
+    font-size: 14px;
+  }
+
   .app-sidebar {
     position: relative;
     min-height: auto;
+    padding: 0.85rem;
+  }
+
+  .app-brand {
+    margin-bottom: 1rem;
+  }
+
+  .sidebar-label {
+    display: none;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0 -0.2rem 0.85rem !important;
+    padding-bottom: 0.25rem !important;
+    overflow-x: auto;
+  }
+
+  .sidebar-nav .nav-item {
+    flex: 0 0 auto;
+  }
+
+  .app-sidebar .nav-link {
+    min-height: 40px;
+    padding: 0.55rem 0.65rem;
+    white-space: nowrap;
+  }
+
+  .app-sidebar .nav-link.active::before {
+    display: none;
+  }
+
+  .nav-link__icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .sidebar-profile {
+    margin-top: 0;
   }
 
   .app-main {
-    padding: 1rem;
+    padding: 0.9rem;
   }
 
   .app-topbar {
+    position: relative;
+    top: auto;
     align-items: flex-start;
     flex-direction: column;
+    margin-bottom: 1rem;
+    padding: 0.85rem;
   }
 
   .app-topbar > .d-flex {
     width: 100%;
     flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
-  .theme-toggle {
-    min-width: 104px;
+  .theme-toggle,
+  .topbar-logout {
+    flex: 1 1 132px;
+  }
+
+  .notification {
+    flex: 0 0 auto;
+  }
+
+  .notification-menu {
+    position: fixed;
+    top: 5.25rem;
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
   }
 
   .dashboard-hero {
     align-items: flex-start;
     flex-direction: column;
+    padding: 1rem;
+  }
+
+  .dashboard-hero h1,
+  .auth-hero h1 {
+    font-size: 2rem;
+    line-height: 1.08;
   }
 
   .dashboard-hero__stat {
     width: 100%;
+    min-width: 0;
   }
 
   .dashboard-kpis,
   .dashboard-grid,
   .dashboard-lower-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .dashboard-panel,
+  .kpi-card {
+    padding: 0.9rem;
+  }
+
+  .kpi-card {
+    min-height: 150px;
+  }
+
+  .kpi-card__top {
+    margin-bottom: 0.75rem;
+  }
+
+  .kpi-card__icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .kpi-card__label {
+    font-size: 0.68rem;
+  }
+
+  .kpi-card strong {
+    font-size: 1.35rem;
+  }
+
+  .kpi-card small {
+    font-size: 0.76rem;
+  }
+
+  .activity-list li {
+    align-items: flex-start;
+    /* flex-direction: column; */
+  }
+
+  .status-pill,
+  .amount-pill {
+    align-self: flex-start;
+  }
+
+  .auth-page {
+    display: block;
+    min-height: 100vh;
+    padding: 0.85rem;
+  }
+
+  .auth-theme {
+    position: relative;
+    top: auto;
+    right: auto;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+  }
+
+  .auth-hero {
+    padding: 0.75rem 0 0;
+  }
+
+  .auth-hero__metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-card .card-body {
+    padding: 1.15rem !important;
+  }
+
+  .auth-options {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .btn-sm {
+    margin-bottom: 0.35rem;
   }
 }
 
@@ -1319,5 +1504,39 @@ label,
   .dashboard-grid,
   .dashboard-lower-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-brand h4 {
+    font-size: 1rem;
+  }
+
+  .app-brand span:not(.app-brand__mark) {
+    font-size: 0.68rem;
+  }
+
+  .sidebar-profile {
+    align-items: flex-start;
+  }
+
+  .sidebar-profile__info {
+    min-width: 0;
+  }
+
+  .sidebar-profile strong,
+  .sidebar-profile span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .panel-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
