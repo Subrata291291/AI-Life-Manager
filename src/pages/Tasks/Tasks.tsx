@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import MainLayout from "../../layouts/MainLayout";
+import {
+  confirmDelete,
+  successAlert,
+} from "../../utils/alerts";
 
 const API =
   "http://localhost/ai-life-manager/wp-json/alm/v1";
@@ -125,33 +129,35 @@ const Tasks = () => {
   };
 
   const handleDelete = async (
-    id: number
+  id: number
   ) => {
 
-    const confirmDelete =
-      window.confirm(
-        "Are you sure you want to delete this task?"
-      );
+  const confirmed =
+    await confirmDelete(
+    "This task will be permanently removed."
+    );
 
-    if (!confirmDelete) return;
+    if (!confirmed) return;
 
     try {
 
-      await axios.delete(
-        `${API}/tasks/${id}`
-      );
+    await axios.delete(
+      `${API}/tasks/${id}`
+    );
 
-      fetchTasks();
+    fetchTasks();
+
+    successAlert(
+      "Task deleted successfully."
+    );
 
     } catch (error) {
 
-      console.error(
-        "Delete failed:",
-        error
-      );
+    console.error(error);
 
     }
   };
+
 
   const getTaskStatus = (
   task: Task
