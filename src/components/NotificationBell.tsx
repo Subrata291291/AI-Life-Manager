@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Bell, X } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
-const API =
-  "http://localhost/ai-life-manager/wp-json/alm/v1";
+const API = API_BASE_URL;
 
 interface Notification {
   id: number;

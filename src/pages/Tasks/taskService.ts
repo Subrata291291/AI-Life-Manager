@@ -1,7 +1,7 @@
 import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 
-const API =
-  "http://localhost/ai-life-manager/wp-json/alm/v1";
+const API = API_BASE_URL;
 
 export const getTasks = async () => {
   const response = await axios.get(`${API}/tasks`);
@@ -18,7 +18,7 @@ export const deleteTask = async (
 ) => {
 
   const response = await fetch(
-    `http://localhost/ai-life-manager/wp-json/alm/v1/tasks/${id}`,
+    `${API}/tasks/${id}`,
     {
       method: "DELETE",
     }

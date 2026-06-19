@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import MainLayout from "../../layouts/MainLayout";
+import { API_BASE_URL } from "../../config/api";
 import {
   confirmDelete,
   successAlert,
 } from "../../utils/alerts";
 
-const API =
-  "http://localhost/ai-life-manager/wp-json/alm/v1";
+const API = API_BASE_URL;
 
 interface Task {
   id: number;
