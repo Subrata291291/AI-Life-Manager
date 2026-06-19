@@ -6,6 +6,11 @@ import {
   deleteExpense,
   updateExpense,
 } from "../../services/expenseService";
+import {
+  confirmDelete,
+  successAlert,
+  errorAlert,
+} from "../../utils/alerts";
 
 interface Expense {
   id: number;
@@ -116,19 +121,33 @@ const Expenses = () => {
   const handleDelete = async (
     id: number
   ) => {
-    if (
-      !window.confirm(
-        "Delete this expense?"
-      )
-    ) {
+
+    const confirmed =
+      await confirmDelete(
+        "This expense will be permanently removed."
+      );
+
+    if (!confirmed) {
       return;
     }
 
     try {
+
       await deleteExpense(id);
+
       fetchExpenses();
+
+      successAlert(
+        "Expense deleted successfully."
+      );
+
     } catch (error) {
+
       console.error(error);
+
+      errorAlert(
+        "Failed to delete expense."
+      );
     }
   };
 

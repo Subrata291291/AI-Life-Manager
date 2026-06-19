@@ -7,6 +7,12 @@ import {
   updateGoal,
   addMoneyToGoal
 } from "../../services/goalService";
+import Swal from "sweetalert2";
+import {
+  confirmDelete,
+  successAlert,
+  errorAlert,
+} from "../../utils/alerts";
 
 interface Goal {
   id: number;
@@ -124,47 +130,78 @@ const Goals = () => {
   };
 
   const handleAddMoney =
-    async (goalId: number) => {
+  async (goalId: number) => {
 
-      const amount =
-        prompt(
-          "Enter amount to add"
-        );
+    const result =
+      await Swal.fire({
+        title: "Add Money",
+        input: "number",
+        inputLabel: "Enter amount",
+        inputPlaceholder: "e.g. 5000",
+        showCancelButton: true,
+        confirmButtonText: "Add Money",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#198754",
+      });
 
-      if (!amount) return;
+    if (!result.isConfirmed || !result.value) {
+      return;
+    }
 
-      try {
+    try {
 
-        await addMoneyToGoal(
-          goalId,
-          Number(amount)
-        );
+      await addMoneyToGoal(
+        goalId,
+        Number(result.value)
+      );
 
-        fetchGoals();
+      fetchGoals();
 
-      } catch (error) {
+      successAlert(
+        "Money added successfully."
+      );
 
-        console.error(error);
+    } catch (error) {
 
-      }
-  };
+      console.error(error);
+
+      errorAlert(
+        "Failed to add money."
+      );
+
+    }
+};
 
   const handleDelete = async (
     id: number
   ) => {
-    const confirmDelete =
-      window.confirm(
-        "Delete this goal?"
+
+    const confirmed =
+      await confirmDelete(
+        "This goal will be permanently removed."
       );
 
-    if (!confirmDelete) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
+
       await deleteGoal(id);
 
       fetchGoals();
+
+      successAlert(
+        "Goal deleted successfully."
+      );
+
     } catch (error) {
+
       console.error(error);
+
+      errorAlert(
+        "Failed to delete goal."
+      );
     }
   };
 

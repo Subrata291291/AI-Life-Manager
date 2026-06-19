@@ -7,6 +7,11 @@ import {
   updateBill,
   markBillPaid,
 } from "../../services/billService";
+import {
+  confirmDelete,
+  successAlert,
+  errorAlert,
+} from "../../utils/alerts";
 
 interface Bill {
   id: number;
@@ -173,11 +178,12 @@ const Bills = () => {
     id: number
   ) => {
 
-    if (
-      !window.confirm(
-        "Delete this bill?"
-      )
-    ) {
+    const confirmed =
+      await confirmDelete(
+        "This bill will be permanently removed."
+      );
+
+    if (!confirmed) {
       return;
     }
 
@@ -187,10 +193,17 @@ const Bills = () => {
 
       fetchBills();
 
+      successAlert(
+        "Bill deleted successfully."
+      );
+
     } catch (error) {
 
       console.error(error);
 
+      errorAlert(
+        "Failed to delete bill."
+      );
     }
   };
 
