@@ -1,38 +1,60 @@
 import {
-  PieChart,
+  Cell,
   Pie,
-  Tooltip
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
 } from "recharts";
 
 const data = [
   {
     name: "Food",
-    value: 500
+    value: 500,
   },
   {
     name: "Travel",
-    value: 300
+    value: 300,
   },
   {
     name: "Bills",
-    value: 700
-  }
+    value: 700,
+  },
+];
+
+const colors = [
+  "#60a5fa",
+  "#2dd4bf",
+  "#fbbf24",
 ];
 
 const ExpenseChart = () => {
   return (
-    <PieChart
-      width={400}
-      height={300}
-    >
-      <Pie
-        data={data}
-        dataKey="value"
-        outerRadius={100}
-      />
+    <div className="chart-box">
+      <ResponsiveContainer
+        width="100%"
+        height={280}
+      >
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            innerRadius={58}
+            outerRadius={98}
+            paddingAngle={4}
+          >
+            {data.map((item, index) => (
+              <Cell
+                key={item.name}
+                fill={colors[index % colors.length]}
+              />
+            ))}
+          </Pie>
 
-      <Tooltip />
-    </PieChart>
+          <Tooltip />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
 

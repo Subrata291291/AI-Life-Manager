@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 
 import Login from "./pages/Login/Login";
+import VerifyEmail from "./pages/VerifyEmail/VerifyEmail";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Tasks from "./pages/Tasks/Tasks";
 import Expenses from "./pages/Expenses/Expenses";
@@ -11,6 +12,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/tasks" element={<Tasks />} />
       <Route path="/expenses" element={<Expenses />}/>
@@ -21,4 +23,3 @@ function App() {
 }
 
 export default App;
-

@@ -1,7 +1,16 @@
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
+import {
+  CheckSquare,
+  CreditCard,
+  LayoutDashboard,
+  LogOut,
+  Receipt,
+  Target,
+} from "lucide-react";
 
 import NotificationBell from "../components/NotificationBell";
+import ThemeToggle from "../components/ThemeToggle";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -19,85 +28,139 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     navigate("/");
   };
 
+  const navItems = [
+    {
+      to: "/dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      to: "/tasks",
+      label: "Tasks",
+      icon: CheckSquare,
+    },
+    {
+      to: "/expenses",
+      label: "Expenses",
+      icon: CreditCard,
+    },
+    {
+      to: "/bills",
+      label: "Bills",
+      icon: Receipt,
+    },
+    {
+      to: "/goals",
+      label: "Goals",
+      icon: Target,
+    },
+  ];
+
   return (
-    <div className="container-fluid">
-      <div className="row">
+    <div className="app-shell">
+      <div className="row g-0">
 
         <div
-          className="col-md-2 bg-dark text-white p-3"
-          style={{ minHeight: "100vh" }}
+          className="col-md-2 app-sidebar"
         >
-          <h4 className="mb-4">
-            AI Life Manager
-          </h4>
+          <div className="app-brand">
+            <span className="app-brand__mark">
+              AI
+            </span>
+            <div>
+              <h4>
+                AI Life Manager
+              </h4>
+              <span>
+                Personal command center
+              </span>
+            </div>
+          </div>
 
-          <ul className="nav flex-column">
+          <div className="sidebar-label">
+            Menu
+          </div>
 
-            <li className="nav-item mb-2">
-              <Link
-                to="/dashboard"
-                className="nav-link text-white"
-              >
-                Dashboard
-              </Link>
-            </li>
+          <ul className="nav flex-column sidebar-nav">
 
-            <li className="nav-item mb-2">
-              <Link
-                to="/tasks"
-                className="nav-link text-white"
-              >
-                Tasks
-              </Link>
-            </li>
+            {navItems.map((item) => {
+              const Icon = item.icon;
 
-            <li className="nav-item mb-2">
-              <Link
-                to="/expenses"
-                className="nav-link text-white"
-              >
-                Expenses
-              </Link>
-            </li>
-
-            <li className="nav-item mb-2">
-              <Link
-                to="/bills"
-                className="nav-link text-white"
-              >
-                Bills
-              </Link>
-            </li>
-
-            <li className="nav-item mb-2">
-              <Link
-                to="/goals"
-                className="nav-link text-white"
-              >
-                Goals
-              </Link>
-            </li>
+              return (
+                <li
+                  className="nav-item"
+                  key={item.to}
+                >
+                  <NavLink
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `nav-link${isActive ? " active" : ""}`
+                    }
+                  >
+                    <span className="nav-link__icon">
+                      <Icon size={18} />
+                    </span>
+                    <span>
+                      {item.label}
+                    </span>
+                  </NavLink>
+                </li>
+              );
+            })}
 
           </ul>
+
+          <div className="sidebar-profile">
+            <div className="sidebar-profile__info">
+              <div className="sidebar-profile__avatar">
+                {(user.name || "U").charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <strong>
+                  {user.name || "User"}
+                </strong>
+                <span>
+                  All systems synced
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="sidebar-logout"
+              onClick={handleLogout}
+              title="Logout"
+              aria-label="Logout"
+            >
+              <LogOut size={17} />
+            </button>
+          </div>
         </div>
 
-        <div className="col-md-10 p-4">
+        <main className="col-md-10 app-main">
 
-          <div className="d-flex justify-content-between mb-4">
+          <div className="app-topbar">
 
             <div>
-              <h5>
+              <span className="app-kicker">
+                Workspace
+              </span>
+              <h5 className="mb-0">
                 Welcome, {user.name || "User"}
               </h5>
             </div>
 
-            <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center gap-2">
+
+              <ThemeToggle />
 
               <NotificationBell />
 
               <button
-                className="btn btn-danger" onClick={handleLogout}
+                className="topbar-logout"
+                onClick={handleLogout}
+                type="button"
               >
+                <LogOut size={17} />
                 Logout
               </button>
 
@@ -107,7 +170,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
           {children}
 
-        </div>
+        </main>
 
       </div>
     </div>
