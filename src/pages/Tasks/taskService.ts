@@ -16,11 +16,22 @@ export const createTask = async (data: any) => {
 export const deleteTask = async (
   id: number
 ) => {
+  const user = JSON.parse(
+    localStorage.getItem("user") || "{}"
+  );
 
   const response = await fetch(
     `${API}/tasks/${id}`,
     {
       method: "DELETE",
+      headers: {
+        "X-ALM-User-ID": String(
+          user.id ||
+          user.ID ||
+          user.user_id ||
+          ""
+        ),
+      },
     }
   );
 
