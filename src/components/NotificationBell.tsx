@@ -201,38 +201,43 @@ export default function NotificationBell() {
 
                     </div>
 
-                    <div>
-                      {item.message}
+                    <div className="notification-mesage">
+                      <ul>
+                        <li>
+                          {item.message}
+                        </li>
+                        <li>
+                          <small
+                            className={
+                              item.remaining_time ===
+                              "Expired"
+                                ? "text-danger"
+                                : "text-primary"
+                            }
+                          >
+
+                            {item.type === "task" ? (
+
+                              item.remaining_time === "Expired" ? (
+
+                                "Expired"
+
+                              ) : (
+
+                                `Starts in ${item.remaining_time}`
+                              )
+
+                            ) : (
+
+                              item.formatted_due_date
+                                ? `Due Date: ${item.formatted_due_date}`
+                                : ""
+                            )}
+
+                          </small> 
+                        </li>
+                      </ul>
                     </div>
-
-                    <small
-                      className={
-                        item.remaining_time ===
-                        "Expired"
-                          ? "text-danger"
-                          : "text-primary"
-                      }
-                    >
-
-                      {item.type === "task" ? (
-
-                        item.remaining_time === "Expired" ? (
-
-                          "Expired"
-
-                        ) : (
-
-                          `Starts in ${item.remaining_time}`
-                        )
-
-                      ) : (
-
-                        item.formatted_due_date
-                          ? `Due Date: ${item.formatted_due_date}`
-                          : ""
-                      )}
-
-                    </small>
 
                   </div>
 
