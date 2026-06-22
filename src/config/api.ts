@@ -1,6 +1,7 @@
 import axios from "axios";
 
 export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
   "https://salujaautomobile.com/ai-life-manager/wp-json/alm/v1";
 
 const getStoredUserId = () => {
