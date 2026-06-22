@@ -31,6 +31,12 @@ class ALM_Dashboard {
 
         global $wpdb;
 
+        $user_id = alm_require_request_user_id();
+
+        if (is_wp_error($user_id)) {
+            return $user_id;
+        }
+
         $tasks_table =
             $wpdb->prefix . 'alm_tasks';
 
@@ -48,19 +54,28 @@ class ALM_Dashboard {
         -------------------------- */
 
         $total_tasks = (int) $wpdb->get_var(
-            "SELECT COUNT(*) FROM {$tasks_table}"
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$tasks_table} WHERE user_id = %d",
+                $user_id
+            )
         );
 
         $completed_tasks = (int) $wpdb->get_var(
-            "SELECT COUNT(*) 
-            FROM {$tasks_table}
-            WHERE status = 'completed'"
+            $wpdb->prepare(
+                "SELECT COUNT(*) 
+                FROM {$tasks_table}
+                WHERE status = 'completed' AND user_id = %d",
+                $user_id
+            )
         );
 
         $pending_tasks = (int) $wpdb->get_var(
-            "SELECT COUNT(*)
-            FROM {$tasks_table}
-            WHERE status = 'pending'"
+            $wpdb->prepare(
+                "SELECT COUNT(*)
+                FROM {$tasks_table}
+                WHERE status = 'pending' AND user_id = %d",
+                $user_id
+            )
         );
 
         $completion_rate =
@@ -71,18 +86,27 @@ class ALM_Dashboard {
                 : 0;
 
         $total_expenses = (float) $wpdb->get_var(
-            "SELECT COALESCE(SUM(amount),0)
-            FROM {$expenses_table}"
+            $wpdb->prepare(
+                "SELECT COALESCE(SUM(amount),0)
+                FROM {$expenses_table} WHERE user_id = %d",
+                $user_id
+            )
         );
 
         $total_bills = (int) $wpdb->get_var(
-            "SELECT COUNT(*)
-            FROM {$bills_table}"
+            $wpdb->prepare(
+                "SELECT COUNT(*)
+                FROM {$bills_table} WHERE user_id = %d",
+                $user_id
+            )
         );
 
         $total_goals = (int) $wpdb->get_var(
-            "SELECT COUNT(*)
-            FROM {$goals_table}"
+            $wpdb->prepare(
+                "SELECT COUNT(*)
+                FROM {$goals_table} WHERE user_id = %d",
+                $user_id
+            )
         );
 
         /* -------------------------
@@ -90,12 +114,16 @@ class ALM_Dashboard {
         -------------------------- */
 
         $recent_tasks = $wpdb->get_results(
-            "SELECT id,
-                    title,
-                    status
-            FROM {$tasks_table}
-            ORDER BY id DESC
-            LIMIT 5",
+            $wpdb->prepare(
+                "SELECT id,
+                        title,
+                        status
+                FROM {$tasks_table}
+                WHERE user_id = %d
+                ORDER BY id DESC
+                LIMIT 5",
+                $user_id
+            ),
             ARRAY_A
         );
 
@@ -104,14 +132,18 @@ class ALM_Dashboard {
         -------------------------- */
 
         $upcoming_bills = $wpdb->get_results(
-            "SELECT id,
-                    bill_name,
-                    amount,
-                    due_date,
-                    status
-            FROM {$bills_table}
-            ORDER BY due_date ASC
-            LIMIT 5",
+            $wpdb->prepare(
+                "SELECT id,
+                        bill_name,
+                        amount,
+                        due_date,
+                        status
+                FROM {$bills_table}
+                WHERE user_id = %d
+                ORDER BY due_date ASC
+                LIMIT 5",
+                $user_id
+            ),
             ARRAY_A
         );
 
@@ -120,35 +152,43 @@ class ALM_Dashboard {
         -------------------------- */
 
         $active_goals = $wpdb->get_results(
-            "SELECT id,
-                    goal_name,
-                    target_amount,
-                    current_amount
-            FROM {$goals_table}
-            ORDER BY id DESC
-            LIMIT 5",
+            $wpdb->prepare(
+                "SELECT id,
+                        goal_name,
+                        target_amount,
+                        current_amount
+                FROM {$goals_table}
+                WHERE user_id = %d
+                ORDER BY id DESC
+                LIMIT 5",
+                $user_id
+            ),
             ARRAY_A
         );
         
         $monthly_expenses =
             $wpdb->get_results(
-                "
-                SELECT
-                DATE_FORMAT(
-                    expense_date,
-                    '%b'
-                ) as month,
+                $wpdb->prepare(
+                    "
+                    SELECT
+                    DATE_FORMAT(
+                        expense_date,
+                        '%b'
+                    ) as month,
 
-                SUM(amount) as total
+                    SUM(amount) as total
 
-                FROM {$expenses_table}
+                    FROM {$expenses_table}
+                    WHERE user_id = %d
 
-                GROUP BY
-                MONTH(expense_date)
+                    GROUP BY
+                    MONTH(expense_date)
 
-                ORDER BY
-                MONTH(expense_date)
-                ",
+                    ORDER BY
+                    MONTH(expense_date)
+                    ",
+                    $user_id
+                ),
                 ARRAY_A
             );
 
@@ -164,44 +204,60 @@ $current_time =
     current_time('mysql');
 
 $wpdb->query(
-    "
-    DELETE n
-    FROM {$notifications_table} n
-    INNER JOIN {$tasks_table} t
-        ON n.task_id = t.id
-    WHERE n.type = 'task'
-    AND t.end_time < NOW()
-    "
+    $wpdb->prepare(
+        "
+        DELETE n
+        FROM {$notifications_table} n
+        INNER JOIN {$tasks_table} t
+            ON n.task_id = t.id
+        WHERE n.type = 'task'
+        AND t.end_time < NOW()
+        AND n.user_id = %d
+        ",
+        $user_id
+    )
 );
 
 $wpdb->query(
-    "
-    UPDATE {$tasks_table}
-    SET status = 'expired'
-    WHERE status = 'pending'
-    AND end_time < NOW()
-    "
+    $wpdb->prepare(
+        "
+        UPDATE {$tasks_table}
+        SET status = 'expired'
+        WHERE status = 'pending'
+        AND end_time < NOW()
+        AND user_id = %d
+        ",
+        $user_id
+    )
 );
 
 $upcoming_tasks =
     $wpdb->get_results(
-        "
-        SELECT *
-        FROM {$tasks_table}
-        WHERE status = 'pending'
-        ",
+        $wpdb->prepare(
+            "
+            SELECT *
+            FROM {$tasks_table}
+            WHERE status = 'pending'
+            AND user_id = %d
+            ",
+            $user_id
+        ),
         ARRAY_A
     );
 
     $wpdb->query(
-    "
-    DELETE n
-    FROM {$notifications_table} n
-    LEFT JOIN {$tasks_table} t
-    ON n.task_id = t.id
-    WHERE n.type='task'
-    AND t.id IS NULL
-    "
+    $wpdb->prepare(
+        "
+        DELETE n
+        FROM {$notifications_table} n
+        LEFT JOIN {$tasks_table} t
+        ON n.task_id = t.id
+        WHERE n.type='task'
+        AND n.user_id = %d
+        AND t.id IS NULL
+        ",
+        $user_id
+    )
 );
 
 foreach ($upcoming_tasks as $task) {
@@ -238,8 +294,10 @@ foreach ($upcoming_tasks as $task) {
                     FROM {$notifications_table}
                     WHERE task_id = %d
                     AND type = 'task'
+                    AND user_id = %d
                     ",
-                    $task['id']
+                    $task['id'],
+                    $user_id
                 )
             );
 
@@ -248,7 +306,7 @@ foreach ($upcoming_tasks as $task) {
             $wpdb->insert(
                 $notifications_table,
                 [
-                    'user_id' => 1,
+                    'user_id' => $user_id,
 
                     'task_id' =>
                         (int) $task['id'],
@@ -286,11 +344,15 @@ Generate Bill Notifications
 
 $bills =
     $wpdb->get_results(
-        "
-        SELECT *
-        FROM {$bills_table}
-        WHERE status != 'paid'
-        ",
+        $wpdb->prepare(
+            "
+            SELECT *
+            FROM {$bills_table}
+            WHERE status != 'paid'
+            AND user_id = %d
+            ",
+            $user_id
+        ),
         ARRAY_A
     );
 
@@ -324,8 +386,10 @@ foreach ($bills as $bill) {
                     SELECT COUNT(*)
                     FROM {$notifications_table}
                     WHERE message=%s
+                    AND user_id = %d
                     ",
-                    $message
+                    $message,
+                    $user_id
                 )
             );
 
@@ -334,7 +398,7 @@ foreach ($bills as $bill) {
             $wpdb->insert(
                 $notifications_table,
                 [
-                    'user_id' => 1,
+                    'user_id' => $user_id,
 
                     'title' =>
                         'Upcoming Bill',

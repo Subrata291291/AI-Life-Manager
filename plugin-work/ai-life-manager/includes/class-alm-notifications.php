@@ -65,6 +65,12 @@ class ALM_Notifications {
 
         global $wpdb;
 
+        $user_id = alm_require_request_user_id();
+
+        if (is_wp_error($user_id)) {
+            return $user_id;
+        }
+
         $tasks_table =
             $wpdb->prefix . 'alm_tasks';
 
@@ -73,22 +79,27 @@ class ALM_Notifications {
 
         $notifications =
             $wpdb->get_results(
-                "
-                SELECT
-                    n.*,
-                    t.start_time,
-                    t.end_time,
-                    b.due_date
-                FROM {$this->table} n
+                $wpdb->prepare(
+                    "
+                    SELECT
+                        n.*,
+                        t.start_time,
+                        t.end_time,
+                        b.due_date
+                    FROM {$this->table} n
 
-                LEFT JOIN {$tasks_table} t
-                    ON n.task_id = t.id
+                    LEFT JOIN {$tasks_table} t
+                        ON n.task_id = t.id
 
-                LEFT JOIN {$bills_table} b
-                    ON n.message LIKE CONCAT('%', b.bill_name, '%')
+                    LEFT JOIN {$bills_table} b
+                        ON n.message LIKE CONCAT('%', b.bill_name, '%') AND b.user_id = %d
 
-                ORDER BY n.id DESC
-                ",
+                    WHERE n.user_id = %d
+                    ORDER BY n.id DESC
+                    ",
+                    $user_id,
+                    $user_id
+                ),
                 ARRAY_A
             );
 
@@ -200,9 +211,12 @@ class ALM_Notifications {
                         $this->table,
                         [
                             'id' =>
-                                $notification['id']
+                                $notification['id'],
+                            'user_id' =>
+                                $user_id
                         ],
                         [
+                            '%d',
                             '%d'
                         ]
                     );
@@ -222,6 +236,12 @@ class ALM_Notifications {
 
         global $wpdb;
 
+        $user_id = alm_require_request_user_id();
+
+        if (is_wp_error($user_id)) {
+            return $user_id;
+        }
+
         $params =
             $request->get_json_params();
 
@@ -231,7 +251,15 @@ class ALM_Notifications {
                 'status' => 'read'
             ],
             [
-                'id' => $params['id']
+                'id' => $params['id'],
+                'user_id' => $user_id
+            ],
+            [
+                '%s'
+            ],
+            [
+                '%d',
+                '%d'
             ]
         );
 
@@ -246,15 +274,23 @@ class ALM_Notifications {
 
         global $wpdb;
 
+        $user_id = alm_require_request_user_id();
+
+        if (is_wp_error($user_id)) {
+            return $user_id;
+        }
+
         $id =
             (int) $request['id'];
 
         $wpdb->delete(
             $this->table,
             [
-                'id' => $id
+                'id' => $id,
+                'user_id' => $user_id
             ],
             [
+                '%d',
                 '%d'
             ]
         );
