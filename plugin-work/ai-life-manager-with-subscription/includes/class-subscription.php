@@ -212,11 +212,18 @@ class ALM_Subscription {
 
     private function ensure_plan_exists($tier) {
         $option_key = 'alm_razorpay_plan_id_tier_' . $tier;
+        $expected_amount = self::$tier_prices[$tier];
         $plan_id = get_option($option_key);
+
         if ($plan_id) {
             $verify = $this->razorpay_api_request('plans/' . $plan_id, [], 'GET');
             if (!is_wp_error($verify)) {
-                return $plan_id;
+                $existing_amount = $verify['item']['amount'] ?? 0;
+                if ((int) $existing_amount === $expected_amount) {
+                    return $plan_id;
+                }
+                alm_debug_log("Plan $plan_id amount mismatch: expected $expected_amount, got $existing_amount. Creating new plan.");
+                delete_option($option_key);
             }
         }
 
@@ -224,8 +231,8 @@ class ALM_Subscription {
             'period' => 'monthly',
             'interval' => 1,
             'item' => [
-                'name' => self::$tiers[$tier]['name'] . ' Plan',
-                'amount' => self::$tier_prices[$tier],
+                'name' => self::$tiers[$tier]['name'] . ' Plan (₹' . number_format($expected_amount / 100) . '/mo)',
+                'amount' => $expected_amount,
                 'currency' => 'INR',
                 'description' => 'Monthly ' . self::$tiers[$tier]['name'] . ' subscription',
             ],

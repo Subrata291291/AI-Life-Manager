@@ -11,6 +11,7 @@ class ALM_Admin {
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_post_alm_set_subscription', [$this, 'handle_set_subscription']);
         add_action('admin_post_alm_test_razorpay', [$this, 'handle_test_razorpay']);
+        add_action('admin_post_alm_reset_plans', [$this, 'handle_reset_plans']);
     }
 
     public function add_admin_menu() {
@@ -37,6 +38,7 @@ class ALM_Admin {
     public function register_settings() {
         register_setting('alm_settings_group', 'alm_razorpay_key_id');
         register_setting('alm_settings_group', 'alm_razorpay_key_secret');
+        register_setting('alm_settings_group', 'alm_frontend_url');
     }
 
     public function render_settings_page() {
@@ -75,6 +77,22 @@ class ALM_Admin {
                             />
                         </td>
                     </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="alm_frontend_url">Frontend URL</label>
+                        </th>
+                        <td>
+                            <input
+                                type="url"
+                                id="alm_frontend_url"
+                                name="alm_frontend_url"
+                                value="<?php echo esc_attr(get_option('alm_frontend_url', home_url())); ?>"
+                                class="regular-text"
+                                placeholder="https://your-netlify-app.netlify.app"
+                            />
+                            <p class="description">Used for email verification and password reset links.</p>
+                        </td>
+                    </tr>
                 </table>
                 <?php submit_button(); ?>
             </form>
@@ -102,6 +120,21 @@ class ALM_Admin {
                 <?php wp_nonce_field('alm_test_razorpay_nonce', 'alm_test_nonce'); ?>
                 <input type="hidden" name="action" value="alm_test_razorpay" />
                 <button type="submit" class="button button-secondary">Test Razorpay Connection</button>
+            </form>
+
+            <hr />
+
+            <h2>Plan Reset</h2>
+            <?php
+            $reset_msg = get_transient('alm_plan_reset_msg');
+            delete_transient('alm_plan_reset_msg');
+            if ($reset_msg) : ?>
+                <div class="notice notice-success is-dismissible"><p><?php echo esc_html($reset_msg); ?></p></div>
+            <?php endif; ?>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                <?php wp_nonce_field('alm_reset_plans_nonce', 'alm_reset_nonce'); ?>
+                <input type="hidden" name="action" value="alm_reset_plans" />
+                <button type="submit" class="button button-secondary" onclick="return confirm('This will delete all stored plan IDs. New plans with correct prices will be created on the next subscription attempt. Continue?')">Reset Stored Plans</button>
             </form>
         </div>
         <?php
@@ -274,6 +307,22 @@ class ALM_Admin {
                 'message' => "Razorpay error: $err",
             ], 30);
         }
+
+        wp_redirect(admin_url('admin.php?page=ai-life-manager'));
+        exit;
+    }
+
+    public function handle_reset_plans() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized.');
+        }
+        check_admin_referer('alm_reset_plans_nonce', 'alm_reset_nonce');
+
+        delete_option('alm_razorpay_plan_id_tier_1');
+        delete_option('alm_razorpay_plan_id_tier_2');
+        delete_option('alm_razorpay_plan_id_tier_3');
+
+        set_transient('alm_plan_reset_msg', 'Stored plan IDs cleared. New plans with correct prices will be created on the next subscription attempt.', 30);
 
         wp_redirect(admin_url('admin.php?page=ai-life-manager'));
         exit;

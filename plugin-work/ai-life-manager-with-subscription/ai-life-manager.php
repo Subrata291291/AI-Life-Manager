@@ -104,6 +104,12 @@ require_once ALM_PLUGIN_PATH . 'includes/class-db.php';
 require_once ALM_PLUGIN_PATH . 'includes/class-loader.php';
 
 register_activation_hook(__FILE__, ['ALM_DB', 'create_tables']);
+register_activation_hook(__FILE__, function () {
+    // Clear stale plan IDs so fresh plans with correct prices are created
+    delete_option('alm_razorpay_plan_id_tier_1');
+    delete_option('alm_razorpay_plan_id_tier_2');
+    delete_option('alm_razorpay_plan_id_tier_3');
+});
 
 function alm_init_plugin() {
     new ALM_Loader();
