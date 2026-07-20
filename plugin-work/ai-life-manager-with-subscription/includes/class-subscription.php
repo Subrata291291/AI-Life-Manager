@@ -21,6 +21,7 @@ class ALM_Subscription {
 
     public function __construct() {
         add_action('rest_api_init', [$this, 'register_routes']);
+        add_action('alm_daily_subscription_sync', [$this, 'sync_all_subscriptions']);
     }
 
     public function register_routes() {
@@ -30,21 +31,15 @@ class ALM_Subscription {
             'permission_callback' => '__return_true',
         ]);
 
-        register_rest_route('alm/v1', '/subscription/create-order', [
+        register_rest_route('alm/v1', '/subscription/create-subscription', [
             'methods' => 'POST',
-            'callback' => [$this, 'create_order'],
+            'callback' => [$this, 'create_subscription'],
             'permission_callback' => '__return_true',
         ]);
 
         register_rest_route('alm/v1', '/subscription/verify', [
             'methods' => 'POST',
             'callback' => [$this, 'verify_payment'],
-            'permission_callback' => '__return_true',
-        ]);
-
-        register_rest_route('alm/v1', '/subscription/webhook', [
-            'methods' => 'POST',
-            'callback' => [$this, 'handle_webhook'],
             'permission_callback' => '__return_true',
         ]);
     }
@@ -55,10 +50,11 @@ class ALM_Subscription {
             return $user_id;
         }
 
+        $this->sync_user_subscription($user_id);
         return $this->build_status_response($user_id);
     }
 
-    public function create_order($request) {
+    public function create_subscription($request) {
         $user_id = alm_require_request_user_id();
         if (is_wp_error($user_id)) {
             return $user_id;
@@ -70,18 +66,20 @@ class ALM_Subscription {
         }
 
         $key_id = get_option('alm_razorpay_key_id');
-        $key_secret = get_option('alm_razorpay_key_secret');
-        if (empty($key_id) || empty($key_secret)) {
+        if (empty($key_id)) {
             return new WP_Error('razorpay_not_configured', 'Payment gateway not configured. Contact support.', ['status' => 500]);
         }
 
-        $amount = self::$tier_prices[$tier];
-        $receipt = 'alm_' . $user_id . '_' . time();
+        $plan_id = $this->ensure_plan_exists($tier);
+        if (is_wp_error($plan_id)) {
+            return $plan_id;
+        }
 
-        $response = $this->razorpay_api_request('orders', [
-            'amount' => $amount,
-            'currency' => 'INR',
-            'receipt' => $receipt,
+        $user = get_userdata($user_id);
+        $response = $this->razorpay_api_request('subscriptions', [
+            'plan_id' => $plan_id,
+            'total_count' => 24,
+            'customer_notify' => 1,
             'notes' => [
                 'user_id' => (string) $user_id,
                 'tier' => (string) $tier,
@@ -92,19 +90,20 @@ class ALM_Subscription {
             return $response;
         }
 
-        $order_id = $response['id'];
-        update_user_meta($user_id, 'alm_razorpay_order_id', $order_id);
+        $subscription_id = $response['id'];
+        update_user_meta($user_id, 'alm_razorpay_subscription_id', $subscription_id);
         update_user_meta($user_id, 'alm_pending_tier', $tier);
 
-        $user = get_userdata($user_id);
+        // Schedule daily sync if not already scheduled
+        if (!wp_next_scheduled('alm_daily_subscription_sync')) {
+            wp_schedule_event(time(), 'daily', 'alm_daily_subscription_sync');
+        }
 
         return [
-            'order_id' => $order_id,
-            'amount' => $amount,
-            'currency' => 'INR',
+            'subscription_id' => $subscription_id,
             'key_id' => $key_id,
             'name' => 'AI Life Manager',
-            'description' => self::$tiers[$tier]['name'] . ' Plan',
+            'description' => self::$tiers[$tier]['name'] . ' Plan (monthly)',
             'prefill' => [
                 'email' => $user ? $user->user_email : '',
                 'name' => $user ? $user->display_name : '',
@@ -120,15 +119,15 @@ class ALM_Subscription {
 
         $params = $request->get_json_params();
         $payment_id = sanitize_text_field($params['razorpay_payment_id'] ?? '');
-        $order_id = sanitize_text_field($params['razorpay_order_id'] ?? '');
+        $subscription_id = sanitize_text_field($params['razorpay_subscription_id'] ?? '');
         $signature = sanitize_text_field($params['razorpay_signature'] ?? '');
 
-        if (empty($payment_id) || empty($order_id) || empty($signature)) {
+        if (empty($payment_id) || empty($subscription_id) || empty($signature)) {
             return new WP_Error('missing_params', 'Missing payment verification parameters.', ['status' => 400]);
         }
 
         $key_secret = get_option('alm_razorpay_key_secret');
-        $expected = hash_hmac('sha256', $order_id . '|' . $payment_id, $key_secret);
+        $expected = hash_hmac('sha256', $subscription_id . '|' . $payment_id, $key_secret);
 
         if (!hash_equals($expected, $signature)) {
             return new WP_Error('verification_failed', 'Payment signature verification failed.', ['status' => 400]);
@@ -142,7 +141,7 @@ class ALM_Subscription {
         update_user_meta($user_id, 'alm_subscription_tier', $tier);
         update_user_meta($user_id, 'alm_subscription_status', 'active');
         update_user_meta($user_id, 'alm_razorpay_payment_id', $payment_id);
-        update_user_meta($user_id, 'alm_razorpay_order_id', $order_id);
+        update_user_meta($user_id, 'alm_razorpay_subscription_id', $subscription_id);
         update_user_meta($user_id, 'alm_subscription_expiry', $expiry);
         delete_user_meta($user_id, 'alm_pending_tier');
 
@@ -155,50 +154,93 @@ class ALM_Subscription {
         ];
     }
 
-    public function handle_webhook() {
-        $payload = file_get_contents('php://input');
-        $data = json_decode($payload, true);
+    // --- Subscription sync (no webhooks needed) ---
 
-        if (!$data || !isset($data['event'])) {
-            return new WP_Error('invalid_webhook', 'Invalid webhook payload.', ['status' => 400]);
+    public function sync_user_subscription($user_id) {
+        $sub_id = get_user_meta($user_id, 'alm_razorpay_subscription_id', true);
+        if (empty($sub_id)) {
+            return;
         }
 
-        $key_secret = get_option('alm_razorpay_key_secret');
-        $webhook_signature = $_SERVER['HTTP_X_RAZORPAY_SIGNATURE'] ?? '';
-        $expected = hash_hmac('sha256', $payload, $key_secret);
-
-        if (!hash_equals($expected, $webhook_signature)) {
-            return new WP_Error('webhook_verification_failed', 'Webhook signature mismatch.', ['status' => 401]);
+        $razorpay_sub = $this->razorpay_api_request('subscriptions/' . $sub_id, [], 'GET');
+        if (is_wp_error($razorpay_sub)) {
+            return;
         }
 
-        $event = $data['event'];
-        $payment = $data['payload']['payment']['entity'] ?? null;
+        $status = $razorpay_sub['status'] ?? '';
+        $tier = (int) get_user_meta($user_id, 'alm_subscription_tier', true);
+        if (!$tier) $tier = 0;
 
-        if (!$payment) {
-            return ['success' => false, 'message' => 'No payment entity found.'];
+        // If subscription is completed or cancelled, mark as expired
+        if (in_array($status, ['completed', 'cancelled', 'halted'])) {
+            update_user_meta($user_id, 'alm_subscription_status', 'expired');
+            return;
         }
 
-        $order_id = $payment['order_id'] ?? '';
-        $payment_id = $payment['id'] ?? '';
+        // If subscription is active, fetch latest invoice for payment date
+        if ($status === 'active') {
+            $invoices = $this->razorpay_api_request('invoices?subscription_id=' . $sub_id . '&count=1', [], 'GET');
+            if (!is_wp_error($invoices) && !empty($invoices['items'])) {
+                $latest = $invoices['items'][0];
+                $paid_at = $latest['paid_at'] ?? 0;
+                if ($paid_at) {
+                    // Set expiry = 30 days from the latest payment
+                    $expiry = date('Y-m-d H:i:s', $paid_at + 30 * 24 * 3600);
+                    update_user_meta($user_id, 'alm_subscription_status', 'active');
+                    update_user_meta($user_id, 'alm_subscription_expiry', $expiry);
+                    if ($tier === 0 && isset($razorpay_sub['notes']['tier'])) {
+                        $tier = (int) $razorpay_sub['notes']['tier'];
+                        update_user_meta($user_id, 'alm_subscription_tier', $tier);
+                    }
+                }
+            }
+        }
+    }
 
-        if ($event === 'payment.captured') {
-            $notes = $payment['notes'] ?? [];
-            $user_id = isset($notes['user_id']) ? (int) $notes['user_id'] : 0;
-            $tier = isset($notes['tier']) ? (int) $notes['tier'] : 0;
+    public function sync_all_subscriptions() {
+        $users = get_users([
+            'meta_key' => 'alm_razorpay_subscription_id',
+            'meta_compare' => 'EXISTS',
+        ]);
 
-            if ($user_id && in_array($tier, [1, 2, 3])) {
-                $expiry = date('Y-m-d H:i:s', strtotime('+30 days'));
-                update_user_meta($user_id, 'alm_subscription_tier', $tier);
-                update_user_meta($user_id, 'alm_subscription_status', 'active');
-                update_user_meta($user_id, 'alm_razorpay_payment_id', $payment_id);
-                update_user_meta($user_id, 'alm_razorpay_order_id', $order_id);
-                update_user_meta($user_id, 'alm_subscription_expiry', $expiry);
-                delete_user_meta($user_id, 'alm_pending_tier');
+        foreach ($users as $user) {
+            $this->sync_user_subscription($user->ID);
+        }
+    }
+
+    // --- Plan management ---
+
+    private function ensure_plan_exists($tier) {
+        $option_key = 'alm_razorpay_plan_id_tier_' . $tier;
+        $plan_id = get_option($option_key);
+        if ($plan_id) {
+            $verify = $this->razorpay_api_request('plans/' . $plan_id, [], 'GET');
+            if (!is_wp_error($verify)) {
+                return $plan_id;
             }
         }
 
-        return ['success' => true];
+        $response = $this->razorpay_api_request('plans', [
+            'period' => 'monthly',
+            'interval' => 1,
+            'item' => [
+                'name' => self::$tiers[$tier]['name'] . ' Plan',
+                'amount' => self::$tier_prices[$tier],
+                'currency' => 'INR',
+                'description' => 'Monthly ' . self::$tiers[$tier]['name'] . ' subscription',
+            ],
+        ]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $plan_id = $response['id'];
+        update_option($option_key, $plan_id);
+        return $plan_id;
     }
+
+    // --- Status helpers ---
 
     private function build_status_response($user_id) {
         $tier = (int) get_user_meta($user_id, 'alm_subscription_tier', true);
@@ -228,18 +270,26 @@ class ALM_Subscription {
         ];
     }
 
-    private function razorpay_api_request($endpoint, $data = []) {
+    private function razorpay_api_request($endpoint, $data = [], $method = 'POST') {
         $key_id = get_option('alm_razorpay_key_id');
         $key_secret = get_option('alm_razorpay_key_secret');
 
-        $response = wp_remote_post('https://api.razorpay.com/v1/' . $endpoint, [
+        $args = [
             'headers' => [
                 'Authorization' => 'Basic ' . base64_encode($key_id . ':' . $key_secret),
                 'Content-Type' => 'application/json',
             ],
-            'body' => wp_json_encode($data),
             'timeout' => 30,
-        ]);
+        ];
+
+        if ($method === 'GET') {
+            $url = 'https://api.razorpay.com/v1/' . $endpoint;
+            $response = wp_remote_get($url, $args);
+        } else {
+            $args['body'] = wp_json_encode($data);
+            $url = 'https://api.razorpay.com/v1/' . $endpoint;
+            $response = wp_remote_post($url, $args);
+        }
 
         if (is_wp_error($response)) {
             return new WP_Error('razorpay_api_error', 'Failed to contact payment gateway: ' . $response->get_error_message(), ['status' => 502]);
@@ -247,8 +297,8 @@ class ALM_Subscription {
 
         $body = wp_remote_retrieve_body($response);
         $result = json_decode($body, true);
-
         $http_code = wp_remote_retrieve_response_code($response);
+
         if ($http_code < 200 || $http_code >= 300) {
             $razorpay_err = $result['error']['description'] ?? ($result['error']['message'] ?? '');
             $err_code = $result['error']['code'] ?? '';
@@ -285,7 +335,6 @@ class ALM_Subscription {
         if (is_wp_error($user_id)) {
             return $user_id;
         }
-
         $has = self::user_has_feature($user_id, $feature);
         if (!$has) {
             return new WP_Error(
@@ -294,7 +343,6 @@ class ALM_Subscription {
                 ['status' => 403]
             );
         }
-
         return $user_id;
     }
 

@@ -12,10 +12,8 @@ export interface SubscriptionStatus {
   payment_id: string | null;
 }
 
-export interface RazorpayOrder {
-  order_id: string;
-  amount: number;
-  currency: string;
+export interface RazorpaySubscription {
+  subscription_id: string;
   key_id: string;
   name: string;
   description: string;
@@ -38,14 +36,14 @@ export const getSubscriptionStatus = async (): Promise<SubscriptionStatus> => {
   return response.data;
 };
 
-export const createRazorpayOrder = async (tier: number): Promise<RazorpayOrder> => {
-  const response = await axios.post(`${API}/subscription/create-order`, { tier });
+export const createRazorpaySubscription = async (tier: number): Promise<RazorpaySubscription> => {
+  const response = await axios.post(`${API}/subscription/create-subscription`, { tier });
   return response.data;
 };
 
 export const verifyPayment = async (data: {
   razorpay_payment_id: string;
-  razorpay_order_id: string;
+  razorpay_subscription_id: string;
   razorpay_signature: string;
 }): Promise<VerifyResponse> => {
   const response = await axios.post(`${API}/subscription/verify`, data);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   getSubscriptionStatus,
-  createRazorpayOrder,
+  createRazorpaySubscription,
   verifyPayment,
   type SubscriptionStatus,
 } from "../services/subscriptionService";
@@ -56,8 +56,8 @@ export function useSubscription() {
 
   const doPayment = async (selectedTier: number): Promise<boolean> => {
     try {
-      const order = await createRazorpayOrder(selectedTier);
-      return await initRazorpayCheckout(order);
+      const subData = await createRazorpaySubscription(selectedTier);
+      return await initRazorpayCheckout(subData);
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Payment could not be initiated.";
       console.error("Payment error:", err?.response?.data || err);
@@ -77,34 +77,32 @@ export function useSubscription() {
   };
 }
 
-function initRazorpayCheckout(order: any): Promise<boolean> {
+function initRazorpayCheckout(subData: any): Promise<boolean> {
   return new Promise((resolve, reject) => {
     if (typeof window.Razorpay === "undefined") {
       const script = document.createElement("script");
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
       script.async = true;
-      script.onload = () => openRazorpay(order, resolve, reject);
+      script.onload = () => openRazorpay(subData, resolve, reject);
       script.onerror = () => reject(new Error("Failed to load Razorpay SDK."));
       document.body.appendChild(script);
     } else {
-      openRazorpay(order, resolve, reject);
+      openRazorpay(subData, resolve, reject);
     }
   });
 }
 
 function openRazorpay(
-  order: any,
+  subData: any,
   resolve: (v: boolean) => void,
   reject: (e: Error) => void
 ) {
   const rzp = new window.Razorpay({
-    key: order.key_id,
-    amount: order.amount,
-    currency: order.currency || "INR",
-    name: order.name || "AI Life Manager",
-    description: order.description || "",
-    order_id: order.order_id,
-    prefill: order.prefill || {},
+    key: subData.key_id,
+    subscription_id: subData.subscription_id,
+    name: subData.name || "AI Life Manager",
+    description: subData.description || "",
+    prefill: subData.prefill || {},
     handler: async (response: any) => {
       try {
         await verifyPayment(response);
