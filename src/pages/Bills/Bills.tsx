@@ -32,6 +32,7 @@ const Bills = () => {
 
   const [editingId, setEditingId] =
     useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] =
     useState({
@@ -107,6 +108,7 @@ const Bills = () => {
   ) => {
 
     e.preventDefault();
+    setSubmitting(true);
 
     try {
 
@@ -141,6 +143,8 @@ const Bills = () => {
 
       console.error(error);
 
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -433,8 +437,11 @@ const Bills = () => {
             <button
               type="submit"
               className="btn btn-primary"
+              disabled={submitting}
             >
-              {editingId
+              {submitting
+                ? "Saving..."
+                : editingId
                 ? "Update Bill"
                 : "Save Bill"}
             </button>

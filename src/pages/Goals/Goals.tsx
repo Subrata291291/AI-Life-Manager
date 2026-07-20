@@ -30,6 +30,7 @@ const Goals = () => {
 
   const [editingId, setEditingId] =
     useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] =
     useState({
@@ -81,6 +82,7 @@ const Goals = () => {
   ) => {
 
     e.preventDefault();
+    setSubmitting(true);
 
     try {
 
@@ -114,6 +116,8 @@ const Goals = () => {
 
       console.error(error);
 
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -424,13 +428,18 @@ const Goals = () => {
 
             </div>
 
-            <button
+                        <button
               type="submit"
               className="btn btn-primary"
+              disabled={submitting}
+
+
             >
-              {editingId
-              ? "Update Goal"
-              : "Add Goal"}
+              {submitting
+                ? "Saving..."
+                : editingId
+                ? "Update Goal"
+                : "Add Goal"}
             </button>
 
             {editingId && (

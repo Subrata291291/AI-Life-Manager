@@ -27,6 +27,7 @@ const Expenses = () => {
 
   const [editingId, setEditingId] =
     useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [filterCategory, setFilterCategory] =
     useState("All");
@@ -79,6 +80,7 @@ const Expenses = () => {
     e: React.FormEvent
   ) => {
     e.preventDefault();
+    setSubmitting(true);
 
     try {
       if (editingId) {
@@ -104,6 +106,8 @@ const Expenses = () => {
       fetchExpenses();
     } catch (error) {
       console.error(error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -411,8 +415,11 @@ const monthlyExpense =
             <button
               type="submit"
               className="btn btn-primary"
+              disabled={submitting}
             >
-              {editingId
+              {submitting
+                ? "Saving..."
+                : editingId
                 ? "Update Expense"
                 : "Add Expense"}
             </button>

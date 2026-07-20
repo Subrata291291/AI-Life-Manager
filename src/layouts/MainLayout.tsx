@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import {
@@ -12,6 +13,7 @@ import {
 
 import NotificationBell from "../components/NotificationBell";
 import ThemeToggle from "../components/ThemeToggle";
+import HelpModal from "../components/HelpModal";
 import SubscriptionModal from "../pages/Subscription/SubscriptionModal";
 import { useSubscriptionContext } from "../contexts/SubscriptionContext";
 import { successAlert, errorAlert } from "../utils/alerts";
@@ -37,6 +39,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     showSubscriptionModal,
     setShowSubscriptionModal,
   } = useSubscriptionContext();
+
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -153,6 +157,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                 </button>
               )}
 
+              {isActive && tier === 3 && (
+                <button className="help-premium-btn" onClick={() => setShowHelpModal(true)} title="Help Guide" type="button">
+                  ?
+                </button>
+              )}
               <ThemeToggle />
               <NotificationBell />
 
@@ -178,6 +187,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         onSubscribe={handleSubscribe}
         currentTier={tier}
         plans={plans}
+      />
+
+      <HelpModal
+        show={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
       />
     </div>
   );

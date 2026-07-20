@@ -33,7 +33,8 @@ const Tasks = () => {
   });
 
   const [editingId, setEditingId] =
-  useState<number | null>(null);
+    useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchTasks = async () => {
     try {
@@ -93,6 +94,7 @@ const Tasks = () => {
   ) => {
 
     e.preventDefault();
+    setSubmitting(true);
 
     try {
 
@@ -122,11 +124,10 @@ const Tasks = () => {
       });
 
       fetchTasks();
-
     } catch (error) {
-
       console.error(error);
-
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -278,7 +279,7 @@ const Tasks = () => {
                     <option value="high">High</option>
                   </select>
                 </div>
-                <button className="btn btn-primary" type="submit">{editingId ? "Update Task" : "Create Task"}</button>
+                <button className="btn btn-primary" type="submit" disabled={submitting}>{submitting ? "Saving..." : editingId ? "Update Task" : "Create Task"}</button>
               </form>
             </div>
           </div>
