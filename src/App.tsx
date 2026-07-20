@@ -8,19 +8,22 @@ import Tasks from "./pages/Tasks/Tasks";
 import Expenses from "./pages/Expenses/Expenses";
 import Bills from "./pages/Bills/Bills";
 import Goals from "./pages/Goals/Goals";
+import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/tasks" element={<Tasks />} />
-      <Route path="/expenses" element={<Expenses />}/>
-      <Route path="/bills" element={<Bills />}/>
-      <Route path="/goals" element={<Goals />}/>
-    </Routes>
+    <SubscriptionProvider>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/tasks" element={<Tasks />} />
+        <Route path="/expenses" element={<Expenses />} />
+        <Route path="/bills" element={<Bills />} />
+        <Route path="/goals" element={<Goals />} />
+      </Routes>
+    </SubscriptionProvider>
   );
 }
 

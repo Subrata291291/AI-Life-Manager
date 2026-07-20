@@ -103,11 +103,23 @@ class ALM_Auth {
 
         wp_set_current_user($user->ID);
 
+        $tier = (int) get_user_meta($user->ID, 'alm_subscription_tier', true);
+        $sub_status = get_user_meta($user->ID, 'alm_subscription_status', true);
+
+        if (!in_array($tier, [0, 1, 2, 3])) {
+            $tier = 0;
+            $sub_status = 'inactive';
+        }
+
         return [
             'success' => true,
             'user_id' => $user->ID,
             'name' => $user->display_name,
-            'email' => $user->user_email
+            'email' => $user->user_email,
+            'subscription' => [
+                'tier' => $tier,
+                'status' => $sub_status ?: 'inactive',
+            ],
         ];
     }
 

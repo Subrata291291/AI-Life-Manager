@@ -11,6 +11,8 @@ import {
   successAlert,
   errorAlert,
 } from "../../utils/alerts";
+import SubscriptionGate from "../../components/SubscriptionGate";
+import { useSubscriptionContext } from "../../contexts/SubscriptionContext";
 
 interface Expense {
   id: number;
@@ -246,8 +248,15 @@ const monthlyExpense =
       0
     );
 
+  const { hasFeature, setShowSubscriptionModal } = useSubscriptionContext();
+
   return (
     <MainLayout>
+      <SubscriptionGate
+        feature="expenses"
+        hasAccess={hasFeature("expenses")}
+        onUpgrade={() => setShowSubscriptionModal(true)}
+      >
       <h2 className="mb-4">
         Expenses
       </h2>
@@ -622,6 +631,7 @@ const monthlyExpense =
           </table>
         </div>
       </div>
+      </SubscriptionGate>
     </MainLayout>
   );
 };

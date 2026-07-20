@@ -12,6 +12,8 @@ import {
   successAlert,
   errorAlert,
 } from "../../utils/alerts";
+import SubscriptionGate from "../../components/SubscriptionGate";
+import { useSubscriptionContext } from "../../contexts/SubscriptionContext";
 
 interface Bill {
   id: number;
@@ -207,9 +209,15 @@ const Bills = () => {
     }
   };
 
+  const { hasFeature, setShowSubscriptionModal } = useSubscriptionContext();
+
   return (
     <MainLayout>
-
+      <SubscriptionGate
+        feature="bills"
+        hasAccess={hasFeature("bills")}
+        onUpgrade={() => setShowSubscriptionModal(true)}
+      >
       <h2 className="mb-4">
         Bills
       </h2>
@@ -638,7 +646,7 @@ const Bills = () => {
 
         </div>
       </div>
-
+      </SubscriptionGate>
     </MainLayout>
   );
 };

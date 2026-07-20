@@ -75,6 +75,13 @@ const Login = () => {
         JSON.stringify(response)
       );
 
+      if (response.subscription) {
+        localStorage.setItem(
+          "subscription",
+          JSON.stringify(response.subscription)
+        );
+      }
+
       navigate("/dashboard");
       return;
     }

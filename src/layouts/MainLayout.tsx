@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import {
   CheckSquare,
   CreditCard,
+  Crown,
   LayoutDashboard,
   LogOut,
   Receipt,
@@ -11,6 +12,9 @@ import {
 
 import NotificationBell from "../components/NotificationBell";
 import ThemeToggle from "../components/ThemeToggle";
+import SubscriptionModal from "../pages/Subscription/SubscriptionModal";
+import { useSubscriptionContext } from "../contexts/SubscriptionContext";
+import { successAlert, errorAlert } from "../utils/alerts";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -23,91 +27,76 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     localStorage.getItem("user") || "{}"
   );
 
+  const {
+    tier,
+    tierName,
+    isActive,
+    refresh,
+    doPayment,
+    showSubscriptionModal,
+    setShowSubscriptionModal,
+  } = useSubscriptionContext();
+
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("subscription");
     navigate("/");
   };
 
+  const handleSubscribe = async (selectedTier: number) => {
+    try {
+      await doPayment(selectedTier);
+      await refresh();
+      successAlert(`Subscribed to ${tierName} plan!`);
+      setShowSubscriptionModal(false);
+    } catch (err: any) {
+      const msg = err?.message || "Payment could not be completed.";
+      errorAlert(msg);
+    }
+  };
+
   const navItems = [
-    {
-      to: "/dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      to: "/tasks",
-      label: "Tasks",
-      icon: CheckSquare,
-    },
-    {
-      to: "/expenses",
-      label: "Expenses",
-      icon: CreditCard,
-    },
-    {
-      to: "/bills",
-      label: "Bills",
-      icon: Receipt,
-    },
-    {
-      to: "/goals",
-      label: "Goals",
-      icon: Target,
-    },
+    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/tasks", label: "Tasks", icon: CheckSquare },
+    { to: "/expenses", label: "Expenses", icon: CreditCard },
+    { to: "/bills", label: "Bills", icon: Receipt },
+    { to: "/goals", label: "Goals", icon: Target },
   ];
 
   return (
     <div className="app-shell">
       <div className="row g-0">
 
-        <div
-          className="col-md-4 col-lg-2 app-sidebar"
-        >
+        <div className="col-md-4 col-lg-2 app-sidebar">
           <div className="app-brand">
-            <span className="app-brand__mark">
-              AI
-            </span>
+            <span className="app-brand__mark">AI</span>
             <div>
-              <h4>
-                AI Life Manager
-              </h4>
-              <span>
-                Personal command center
-              </span>
+              <h4>AI Life Manager</h4>
+              <span>Personal command center</span>
             </div>
           </div>
 
-          <div className="sidebar-label">
-            Menu
-          </div>
+          <div className="sidebar-label">Menu</div>
 
           <ul className="nav flex-column sidebar-nav">
-
             {navItems.map((item) => {
               const Icon = item.icon;
-
               return (
-                <li
-                  className="nav-item"
-                  key={item.to}
-                >
+                <li className="nav-item" key={item.to}>
                   <NavLink
                     to={item.to}
-                    className={({ isActive }) =>
-                      `nav-link${isActive ? " active" : ""}`
+                    className={({ isActive: active }) =>
+                      `nav-link${active ? " active" : ""}`
                     }
                   >
                     <span className="nav-link__icon">
                       <Icon size={18} />
                     </span>
-                    <span>
-                      {item.label}
-                    </span>
+                    <span>{item.label}</span>
                   </NavLink>
                 </li>
               );
             })}
-
           </ul>
 
           <div className="sidebar-profile">
@@ -116,11 +105,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                 {(user.name || "U").charAt(0).toUpperCase()}
               </div>
               <div>
-                <strong>
-                  {user.name || "User"}
-                </strong>
+                <strong>{user.name || "User"}</strong>
                 <span>
-                  All systems synced
+                  {isActive ? `${tierName} Plan` : "Free tier"}
                 </span>
               </div>
             </div>
@@ -137,22 +124,34 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         </div>
 
         <main className="col-md-8 col-lg-10 app-main">
-
           <div className="app-topbar">
-
             <div>
-              <span className="app-kicker">
-                Workspace
-              </span>
+              <span className="app-kicker">Workspace</span>
               <h5 className="mb-0">
                 Welcome, {user.name || "User"}
               </h5>
             </div>
 
             <div className="d-flex align-items-center gap-2">
+              {isActive && (
+                <span className="tier-badge">
+                  <Crown size={14} />
+                  {tierName}
+                </span>
+              )}
+
+              {!isActive && (
+                <button
+                  className="btn btn-outline-primary btn-sm"
+                  onClick={() => setShowSubscriptionModal(true)}
+                  type="button"
+                >
+                  <Crown size={14} className="me-1" />
+                  Subscribe
+                </button>
+              )}
 
               <ThemeToggle />
-
               <NotificationBell />
 
               <button
@@ -163,16 +162,20 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                 <LogOut size={17} />
                 Logout
               </button>
-
             </div>
-
           </div>
 
           {children}
-
         </main>
 
       </div>
+
+      <SubscriptionModal
+        show={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        onSubscribe={handleSubscribe}
+        currentTier={tier}
+      />
     </div>
   );
 };

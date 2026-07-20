@@ -13,6 +13,8 @@ import {
   successAlert,
   errorAlert,
 } from "../../utils/alerts";
+import SubscriptionGate from "../../components/SubscriptionGate";
+import { useSubscriptionContext } from "../../contexts/SubscriptionContext";
 
 interface Goal {
   id: number;
@@ -225,8 +227,15 @@ const Goals = () => {
     );
   };
 
+  const { hasFeature, setShowSubscriptionModal } = useSubscriptionContext();
+
   return (
     <MainLayout>
+      <SubscriptionGate
+        feature="goals"
+        hasAccess={hasFeature("goals")}
+        onUpgrade={() => setShowSubscriptionModal(true)}
+      >
       <h2 className="mb-4">
         Financial Goals
       </h2>
@@ -655,7 +664,7 @@ const Goals = () => {
 
         </div>
       </div>
-
+      </SubscriptionGate>
     </MainLayout>
   );
 };

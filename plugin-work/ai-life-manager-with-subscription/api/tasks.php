@@ -72,8 +72,7 @@ class ALM_Tasks {
 
         global $wpdb;
 
-        $user_id = alm_require_request_user_id();
-
+        $user_id = ALM_Subscription::require_feature_access('tasks');
         if (is_wp_error($user_id)) {
             return $user_id;
         }
@@ -93,8 +92,7 @@ class ALM_Tasks {
 
         global $wpdb;
 
-        $user_id = alm_require_request_user_id();
-
+        $user_id = ALM_Subscription::require_feature_access('tasks');
         if (is_wp_error($user_id)) {
             return $user_id;
         }
@@ -171,8 +169,7 @@ class ALM_Tasks {
 
     global $wpdb;
 
-    $user_id = alm_require_request_user_id();
-
+    $user_id = ALM_Subscription::require_feature_access('tasks');
     if (is_wp_error($user_id)) {
         return $user_id;
     }
@@ -219,8 +216,7 @@ class ALM_Tasks {
 
         global $wpdb;
 
-        $user_id = alm_require_request_user_id();
-
+        $user_id = ALM_Subscription::require_feature_access('tasks');
         if (is_wp_error($user_id)) {
             return $user_id;
         }
@@ -277,8 +273,7 @@ class ALM_Tasks {
     public function update_task($request){
         global $wpdb;
 
-        $user_id = alm_require_request_user_id();
-
+        $user_id = ALM_Subscription::require_feature_access('tasks');
         if (is_wp_error($user_id)) {
             return $user_id;
         }

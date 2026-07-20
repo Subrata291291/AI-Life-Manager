@@ -35,9 +35,9 @@ interface DashboardStats {
   }[];
 
   insights: {
-    expenses: string;
-    goal: string;
-    bill: string;
+    expenses: string | null;
+    goal: string | null;
+    bill: string | null;
   };
 }
 
@@ -57,27 +57,24 @@ const formatCurrency = (value: number) =>
   }).format(value || 0);
 
 const Dashboard = () => {
-  const [stats, setStats] =
-    useState<DashboardStats>({
-      tasks: 0,
-      completed_tasks: 0,
-      pending_tasks: 0,
-      completion_rate: 0,
-      expenses: 0,
-      bills: 0,
-      goals: 0,
-
-      recent_tasks: [],
-      upcoming_bills: [],
-      active_goals: [],
-      monthly_expenses: [],
-
-      insights: {
-        expenses: "",
-        goal: "",
-        bill: "",
-      },
-    });
+  const [stats, setStats] = useState<DashboardStats>({
+    tasks: 0,
+    completed_tasks: 0,
+    pending_tasks: 0,
+    completion_rate: 0,
+    expenses: 0,
+    bills: 0,
+    goals: 0,
+    recent_tasks: [],
+    upcoming_bills: [],
+    active_goals: [],
+    monthly_expenses: [],
+    insights: {
+      expenses: null,
+      goal: null,
+      bill: null,
+    },
+  });
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -85,13 +82,9 @@ const Dashboard = () => {
         const data = await getDashboardStats();
         setStats(data);
       } catch (error) {
-        console.error(
-          "Failed to load dashboard stats:",
-          error
-        );
+        console.error("Failed to load dashboard stats:", error);
       }
     };
-
     fetchStats();
   }, []);
 
@@ -137,12 +130,8 @@ const Dashboard = () => {
       <div className="dashboard">
         <section className="dashboard-hero">
           <div>
-            <span className="dashboard-eyebrow">
-              Overview
-            </span>
-            <h1>
-              Dashboard
-            </h1>
+            <span className="dashboard-eyebrow">Overview</span>
+            <h1>Dashboard</h1>
             <p>
               A focused snapshot of your tasks, money, bills, and goals.
             </p>
@@ -151,12 +140,8 @@ const Dashboard = () => {
           <div className="dashboard-hero__stat">
             <Activity size={20} />
             <div>
-              <strong>
-                {stats.completion_rate}%
-              </strong>
-              <span>
-                Completion rate
-              </span>
+              <strong>{stats.completion_rate}%</strong>
+              <span>Completion rate</span>
             </div>
           </div>
         </section>
@@ -164,7 +149,6 @@ const Dashboard = () => {
         <section className="dashboard-kpis">
           {kpiCards.map((card) => {
             const Icon = card.icon;
-
             return (
               <article
                 className={`kpi-card kpi-card--${card.tone}`}
@@ -179,219 +163,151 @@ const Dashboard = () => {
                 <span className="kpi-card__label">
                   {card.label}
                 </span>
-                <strong>
-                  {card.value}
-                </strong>
-                <small>
-                  {card.detail}
-                </small>
+                <strong>{card.value}</strong>
+                <small>{card.detail}</small>
               </article>
             );
           })}
         </section>
 
         <section className="dashboard-grid">
-          <article className="dashboard-panel dashboard-panel--wide">
-            <div className="panel-heading">
-              <div>
-                <span>
-                  Spending trend
-                </span>
-                <h2>
-                  Monthly Expenses
-                </h2>
+            <article className="dashboard-panel dashboard-panel--wide">
+              <div className="panel-heading">
+                <div>
+                  <span>Spending trend</span>
+                  <h2>Monthly Expenses</h2>
+                </div>
               </div>
-            </div>
-            <MonthlyExpenseChart
-              data={stats.monthly_expenses}
-            />
-          </article>
+              <MonthlyExpenseChart data={stats.monthly_expenses} />
+            </article>
 
-          <article className="dashboard-panel">
-            <div className="panel-heading">
-              <div>
-                <span>
-                  Category mix
-                </span>
-                <h2>
-                  Expense Breakdown
-                </h2>
+            <article className="dashboard-panel">
+              <div className="panel-heading">
+                <div>
+                  <span>Category mix</span>
+                  <h2>Expense Breakdown</h2>
+                </div>
               </div>
-            </div>
-            <ExpenseChart />
-          </article>
-        </section>
+              <ExpenseChart />
+            </article>
+          </section>
 
-        <section className="dashboard-lower-grid">
-          <article className="dashboard-panel">
-            <div className="panel-heading">
-              <div>
-                <span>
-                  Recommendations
-                </span>
-                <h2>
-                  AI Insights
-                </h2>
+          <section className="dashboard-lower-grid">
+            <article className="dashboard-panel">
+              <div className="panel-heading">
+                <div>
+                  <span>Recommendations</span>
+                  <h2>AI Insights</h2>
+                </div>
+                <Lightbulb size={19} />
               </div>
-              <Lightbulb size={19} />
-            </div>
 
-            {insights.length === 0 ? (
-              <p className="empty-state">
-                No insights available yet.
-              </p>
-            ) : (
-              <ul className="insight-list">
-                {insights.map((insight) => (
-                  <li key={insight}>
-                    {insight}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </article>
+              {insights.length === 0 ? (
+                <p className="empty-state">No insights available yet.</p>
+              ) : (
+                <ul className="insight-list">
+                  {insights.map((insight) => (
+                    <li key={insight}>{insight}</li>
+                  ))}
+                </ul>
+              )}
+            </article>
 
-          <article className="dashboard-panel">
-            <div className="panel-heading">
-              <div>
-                <span>
-                  Work queue
-                </span>
-                <h2>
-                  Recent Tasks
-                </h2>
+            <article className="dashboard-panel">
+              <div className="panel-heading">
+                <div>
+                  <span>Work queue</span>
+                  <h2>Recent Tasks</h2>
+                </div>
+                <TimerReset size={19} />
               </div>
-              <TimerReset size={19} />
-            </div>
 
-            {stats.recent_tasks.length === 0 ? (
-              <p className="empty-state">
-                No tasks found.
-              </p>
-            ) : (
-              <ul className="activity-list">
-                {stats.recent_tasks.map(
-                  (task: any) => (
+              {stats.recent_tasks.length === 0 ? (
+                <p className="empty-state">No tasks found.</p>
+              ) : (
+                <ul className="activity-list">
+                  {stats.recent_tasks.map((task: any) => (
                     <li key={task.id}>
                       <div>
-                        <strong>
-                          {task.title}
-                        </strong>
-                        <span>
-                          Task status
-                        </span>
+                        <strong>{task.title}</strong>
+                        <span>Task status</span>
                       </div>
-                      <span className="status-pill">
-                        {task.status}
-                      </span>
+                      <span className="status-pill">{task.status}</span>
                     </li>
-                  )
-                )}
-              </ul>
-            )}
-          </article>
+                  ))}
+                </ul>
+              )}
+            </article>
 
-          <article className="dashboard-panel">
-            <div className="panel-heading">
-              <div>
-                <span>
-                  Cash flow
-                </span>
-                <h2>
-                  Upcoming Bills
-                </h2>
+            <article className="dashboard-panel">
+              <div className="panel-heading">
+                <div>
+                  <span>Cash flow</span>
+                  <h2>Upcoming Bills</h2>
+                </div>
+                <Receipt size={19} />
               </div>
-              <Receipt size={19} />
-            </div>
 
-            {stats.upcoming_bills.length === 0 ? (
-              <p className="empty-state">
-                No bills found.
-              </p>
-            ) : (
-              <ul className="activity-list">
-                {stats.upcoming_bills.map(
-                  (bill: any) => (
+              {stats.upcoming_bills.length === 0 ? (
+                <p className="empty-state">No bills found.</p>
+              ) : (
+                <ul className="activity-list">
+                  {stats.upcoming_bills.map((bill: any) => (
                     <li key={bill.id}>
                       <div>
-                        <strong>
-                          {bill.bill_name}
-                        </strong>
-                        <span>
-                          Upcoming payment
-                        </span>
+                        <strong>{bill.bill_name}</strong>
+                        <span>Upcoming payment</span>
                       </div>
                       <span className="amount-pill">
                         {formatCurrency(Number(bill.amount))}
                       </span>
                     </li>
-                  )
-                )}
-              </ul>
-            )}
-          </article>
+                  ))}
+                </ul>
+              )}
+            </article>
 
-          <article className="dashboard-panel">
-            <div className="panel-heading">
-              <div>
-                <span>
-                  Progress
-                </span>
-                <h2>
-                  Active Goals
-                </h2>
+            <article className="dashboard-panel">
+              <div className="panel-heading">
+                <div>
+                  <span>Progress</span>
+                  <h2>Active Goals</h2>
+                </div>
+                <Target size={19} />
               </div>
-              <Target size={19} />
-            </div>
 
-            {stats.active_goals.length === 0 ? (
-              <p className="empty-state">
-                No goals found.
-              </p>
-            ) : (
-              <div className="goal-stack">
-                {stats.active_goals.map(
-                  (goal: any) => {
+              {stats.active_goals.length === 0 ? (
+                <p className="empty-state">No goals found.</p>
+              ) : (
+                <div className="goal-stack">
+                  {stats.active_goals.map((goal: any) => {
                     const progress =
                       Math.min(
                         100,
                         Math.round(
-                          (
-                            Number(goal.current_amount) /
-                            Number(goal.target_amount)
-                          ) * 100
+                          (Number(goal.current_amount) / Number(goal.target_amount)) * 100
                         )
                       ) || 0;
 
                     return (
-                      <div
-                        key={goal.id}
-                        className="goal-row"
-                      >
+                      <div key={goal.id} className="goal-row">
                         <div className="goal-row__top">
-                          <strong>
-                            {goal.goal_name}
-                          </strong>
-                          <span>
-                            {progress}%
-                          </span>
+                          <strong>{goal.goal_name}</strong>
+                          <span>{progress}%</span>
                         </div>
                         <div className="progress">
                           <div
                             className="progress-bar"
-                            style={{
-                              width: `${progress}%`,
-                            }}
+                            style={{ width: `${progress}%` }}
                           />
                         </div>
                       </div>
                     );
-                  }
-                )}
-              </div>
-            )}
-          </article>
-        </section>
+                  })}
+                </div>
+              )}
+            </article>
+          </section>
       </div>
     </MainLayout>
   );
