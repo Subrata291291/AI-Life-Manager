@@ -60,6 +60,7 @@ export function useSubscription() {
       return await initRazorpayCheckout(order);
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Payment could not be initiated.";
+      console.error("Payment error:", err?.response?.data || err);
       throw new Error(msg);
     }
   };
