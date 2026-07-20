@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import {
   getSubscriptionStatus,
   createRazorpaySubscription,
+  getSubscriptionPlans,
   verifyPayment,
+  type SubscriptionPlan,
   type SubscriptionStatus,
 } from "../services/subscriptionService";
 
@@ -22,6 +24,7 @@ const TIER_NAMES: Record<number, string> = {
 export function useSubscription() {
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -44,6 +47,12 @@ export function useSubscription() {
     fetchStatus();
   }, [fetchStatus]);
 
+  useEffect(() => {
+    getSubscriptionPlans().then(setPlans).catch(() => {
+      // Prices are unavailable until the API is reachable; do not show a client-side price.
+    });
+  }, []);
+
   const tier = sub?.tier ?? 0;
   const tierName = TIER_NAMES[tier] ?? "Free";
   const isActive = sub?.status === "active";
@@ -57,6 +66,9 @@ export function useSubscription() {
   const doPayment = async (selectedTier: number): Promise<boolean> => {
     try {
       const subData = await createRazorpaySubscription(selectedTier);
+      if (subData.tier !== selectedTier) {
+        throw new Error("The payment gateway returned a different plan. Please try again.");
+      }
       return await initRazorpayCheckout(subData);
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Payment could not be initiated.";
@@ -74,6 +86,7 @@ export function useSubscription() {
     hasFeature,
     refresh: fetchStatus,
     doPayment,
+    plans,
   };
 }
 

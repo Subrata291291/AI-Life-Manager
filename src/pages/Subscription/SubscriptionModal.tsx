@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { CheckCircle, Crown, Sparkles, Zap, X } from "lucide-react";
+import type { SubscriptionPlan } from "../../services/subscriptionService";
 
 const TIERS = [
   { id: 1, name: "Tasks", price: "₹499", priceLabel: "/month", icon: Zap, color: "#6366f1", features: [
@@ -18,9 +19,14 @@ interface Props {
   onClose: () => void;
   onSubscribe: (tier: number) => Promise<void>;
   currentTier: number;
+  plans: SubscriptionPlan[];
 }
 
-const SubscriptionModal = ({ show, onClose, onSubscribe, currentTier }: Props) => {
+const formatPrice = (amount?: number) => amount === undefined
+  ? "—"
+  : new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount / 100);
+
+const SubscriptionModal = ({ show, onClose, onSubscribe, currentTier, plans }: Props) => {
   const [selectedTier, setSelectedTier] = useState(2);
   const [busy, setBusy] = useState(false);
   const [animState, setAnimState] = useState<"closed" | "entering" | "open" | "leaving">("closed");
@@ -42,10 +48,10 @@ const SubscriptionModal = ({ show, onClose, onSubscribe, currentTier }: Props) =
 
   const isVisible = animState === "open" || animState === "entering";
 
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (tier: number) => {
     setBusy(true);
     try {
-      await onSubscribe(selectedTier);
+      await onSubscribe(tier);
     } finally {
       setBusy(false);
     }
@@ -74,6 +80,7 @@ const SubscriptionModal = ({ show, onClose, onSubscribe, currentTier }: Props) =
           <div className="subscription-tiers">
             {TIERS.map((tier) => {
               const Icon = tier.icon;
+              const plan = plans.find((item) => item.id === tier.id);
               const isCurrent = currentTier >= tier.id;
               const isSelected = selectedTier === tier.id;
               return (
@@ -94,8 +101,8 @@ const SubscriptionModal = ({ show, onClose, onSubscribe, currentTier }: Props) =
                   <h5 className="tier-card__name">{tier.name}</h5>
 
                   <div className="tier-card__price">
-                    <strong>{tier.price}</strong>
-                    <span>{tier.priceLabel}</span>
+                    <strong>{formatPrice(plan?.amount)}</strong>
+                    <span>/month</span>
                   </div>
 
                   <ul className="tier-card__features">
@@ -107,7 +114,7 @@ const SubscriptionModal = ({ show, onClose, onSubscribe, currentTier }: Props) =
                   <button
                     className="tier-card__btn"
                     disabled={isCurrent || (busy && selectedTier === tier.id)}
-                    onClick={(e) => { e.stopPropagation(); if (!isCurrent) { setSelectedTier(tier.id); handleSubscribe(); } }}
+                    onClick={(e) => { e.stopPropagation(); if (!isCurrent) { setSelectedTier(tier.id); handleSubscribe(tier.id); } }}
                   >
                     {isCurrent ? "Active" : `Choose ${tier.name}`}
                   </button>

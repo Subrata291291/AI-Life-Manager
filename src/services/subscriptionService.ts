@@ -14,6 +14,9 @@ export interface SubscriptionStatus {
 
 export interface RazorpaySubscription {
   subscription_id: string;
+  tier: number;
+  amount: number;
+  currency: "INR";
   key_id: string;
   name: string;
   description: string;
@@ -21,6 +24,14 @@ export interface RazorpaySubscription {
     email: string;
     name: string;
   };
+}
+
+export interface SubscriptionPlan {
+  id: number;
+  name: string;
+  amount: number;
+  currency: "INR";
+  interval: "month";
 }
 
 export interface VerifyResponse {
@@ -39,6 +50,11 @@ export const getSubscriptionStatus = async (): Promise<SubscriptionStatus> => {
 export const createRazorpaySubscription = async (tier: number): Promise<RazorpaySubscription> => {
   const response = await axios.post(`${API}/subscription/create-subscription`, { tier });
   return response.data;
+};
+
+export const getSubscriptionPlans = async (): Promise<SubscriptionPlan[]> => {
+  const response = await axios.get(`${API}/subscription/plans`);
+  return response.data.plans;
 };
 
 export const verifyPayment = async (data: {

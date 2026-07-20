@@ -33,6 +33,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     isActive,
     refresh,
     doPayment,
+    plans,
     showSubscriptionModal,
     setShowSubscriptionModal,
   } = useSubscriptionContext();
@@ -45,9 +46,10 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   const handleSubscribe = async (selectedTier: number) => {
     try {
-      await doPayment(selectedTier);
+      const paymentCompleted = await doPayment(selectedTier);
+      if (!paymentCompleted) return;
       await refresh();
-      successAlert(`Subscribed to ${tierName} plan!`);
+      successAlert("Subscription payment completed successfully.");
       setShowSubscriptionModal(false);
     } catch (err: any) {
       const msg = err?.message || "Payment could not be completed.";
@@ -175,6 +177,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         onClose={() => setShowSubscriptionModal(false)}
         onSubscribe={handleSubscribe}
         currentTier={tier}
+        plans={plans}
       />
     </div>
   );

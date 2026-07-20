@@ -31,6 +31,12 @@ class ALM_Subscription {
             'permission_callback' => '__return_true',
         ]);
 
+        register_rest_route('alm/v1', '/subscription/plans', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_plans'],
+            'permission_callback' => '__return_true',
+        ]);
+
         register_rest_route('alm/v1', '/subscription/create-subscription', [
             'methods' => 'POST',
             'callback' => [$this, 'create_subscription'],
@@ -93,6 +99,7 @@ class ALM_Subscription {
         $subscription_id = $response['id'];
         update_user_meta($user_id, 'alm_razorpay_subscription_id', $subscription_id);
         update_user_meta($user_id, 'alm_pending_tier', $tier);
+        update_user_meta($user_id, 'alm_pending_razorpay_subscription_id', $subscription_id);
 
         // Schedule daily sync if not already scheduled
         if (!wp_next_scheduled('alm_daily_subscription_sync')) {
@@ -101,6 +108,9 @@ class ALM_Subscription {
 
         return [
             'subscription_id' => $subscription_id,
+            'tier' => $tier,
+            'amount' => self::$tier_prices[$tier],
+            'currency' => 'INR',
             'key_id' => $key_id,
             'name' => 'AI Life Manager',
             'description' => self::$tiers[$tier]['name'] . ' Plan (monthly)',
@@ -134,7 +144,28 @@ class ALM_Subscription {
         }
 
         $pending_tier = (int) get_user_meta($user_id, 'alm_pending_tier', true);
-        $tier = in_array($pending_tier, [1, 2, 3]) ? $pending_tier : 1;
+        $pending_subscription_id = get_user_meta($user_id, 'alm_pending_razorpay_subscription_id', true);
+        if (!in_array($pending_tier, [1, 2, 3], true) || !hash_equals($pending_subscription_id, $subscription_id)) {
+            return new WP_Error('invalid_subscription', 'This payment does not match your pending subscription.', ['status' => 400]);
+        }
+
+        $razorpay_subscription = $this->razorpay_api_request('subscriptions/' . $subscription_id, [], 'GET');
+        if (is_wp_error($razorpay_subscription)) {
+            return $razorpay_subscription;
+        }
+
+        $expected_plan_id = get_option('alm_razorpay_plan_id_tier_' . $pending_tier);
+        $expected_amount = self::$tier_prices[$pending_tier];
+        $subscription_user_id = (string) ($razorpay_subscription['notes']['user_id'] ?? '');
+        if (($razorpay_subscription['plan_id'] ?? '') !== $expected_plan_id || $subscription_user_id !== (string) $user_id) {
+            return new WP_Error('subscription_plan_mismatch', 'The payment subscription does not match the selected plan.', ['status' => 400]);
+        }
+
+        $razorpay_plan = $this->razorpay_api_request('plans/' . $expected_plan_id, [], 'GET');
+        if (is_wp_error($razorpay_plan) || (int) ($razorpay_plan['item']['amount'] ?? 0) !== $expected_amount) {
+            return new WP_Error('subscription_plan_mismatch', 'The payment plan amount could not be verified.', ['status' => 400]);
+        }
+        $tier = $pending_tier;
 
         $expiry = date('Y-m-d H:i:s', strtotime('+30 days'));
 
@@ -144,6 +175,7 @@ class ALM_Subscription {
         update_user_meta($user_id, 'alm_razorpay_subscription_id', $subscription_id);
         update_user_meta($user_id, 'alm_subscription_expiry', $expiry);
         delete_user_meta($user_id, 'alm_pending_tier');
+        delete_user_meta($user_id, 'alm_pending_razorpay_subscription_id');
 
         return [
             'success' => true,
@@ -209,6 +241,20 @@ class ALM_Subscription {
     }
 
     // --- Plan management ---
+
+    public function get_plans() {
+        $plans = [];
+        foreach (self::$tier_prices as $tier => $amount) {
+            $plans[] = [
+                'id' => $tier,
+                'name' => self::$tiers[$tier]['name'],
+                'amount' => $amount,
+                'currency' => 'INR',
+                'interval' => 'month',
+            ];
+        }
+        return ['plans' => $plans];
+    }
 
     private function ensure_plan_exists($tier) {
         $option_key = 'alm_razorpay_plan_id_tier_' . $tier;

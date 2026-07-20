@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
-import type { SubscriptionStatus } from "../services/subscriptionService";
+import type { SubscriptionPlan, SubscriptionStatus } from "../services/subscriptionService";
 import { useSubscription } from "../hooks/useSubscription";
 
 export interface SubscriptionContextValue {
@@ -10,6 +10,7 @@ export interface SubscriptionContextValue {
   hasFeature: (feature: string) => boolean;
   refresh: () => Promise<void>;
   doPayment: (tier: number) => Promise<boolean>;
+  plans: SubscriptionPlan[];
   showSubscriptionModal: boolean;
   setShowSubscriptionModal: (v: boolean) => void;
 }
@@ -22,6 +23,7 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
   hasFeature: () => false,
   refresh: async () => {},
   doPayment: async () => false,
+  plans: [],
   showSubscriptionModal: false,
   setShowSubscriptionModal: () => {},
 });
