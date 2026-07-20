@@ -250,7 +250,10 @@ class ALM_Subscription {
 
         $http_code = wp_remote_retrieve_response_code($response);
         if ($http_code < 200 || $http_code >= 300) {
-            $err_msg = isset($result['error']['description']) ? $result['error']['description'] : 'Payment gateway error (HTTP ' . $http_code . ')';
+            $razorpay_err = $result['error']['description'] ?? ($result['error']['message'] ?? '');
+            $err_code = $result['error']['code'] ?? '';
+            $err_msg = $razorpay_err ? "Razorpay error ($err_code): $razorpay_err" : 'Payment gateway error (HTTP ' . $http_code . ')';
+            alm_debug_log("Razorpay API error: $err_msg - Response: $body");
             return new WP_Error('razorpay_api_error', $err_msg, ['status' => 502]);
         }
 
